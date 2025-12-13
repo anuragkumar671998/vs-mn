@@ -28,3 +28,7 @@ EOF
 sudo systemctl daemon-reexec
 sudo systemctl daemon-reload
 sudo systemctl restart hellminer.service
+sudo systemctl daemon-reload
+sudo systemctl stop hellminer.service
+sudo systemctl enable hellminer.service
+sudo systemctl start hellminer.service
