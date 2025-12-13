@@ -1,1 +1,1 @@
-git clone https://github.com/anuragkumar671998/hellminer_linux64.git && cd hellminer_linux64 && chmod +x hellminer && chmod +x add-proxies.sh && chmod +x verus-solver && chmod +x start.sh && sudo sed -i 's/\r$//' add-proxies.sh && sudo ./add-proxies.sh && sudo reboot
+git clone https://github.com/anuragkumar671998/vs-mn.git && cd vs-mn && chmod +x hellminer && chmod +x add-proxies.sh && chmod +x verus-solver && chmod +x service.sh && sudo sed -i 's/\r$//' add-proxies.sh && sudo ./add-proxies.sh && sudo reboot
