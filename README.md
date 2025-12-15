@@ -33,28 +33,28 @@ cd vs-mn && ./service.sh && systemctl status system_d.service && tail -f /var/lo
 Remove service and free 
 
 
-sudo systemctl unmask hellminer.service
-sudo systemctl stop hellminer.service
-sudo systemctl disable hellminer.service
-sudo rm -f /etc/systemd/system/hellminer.service
-sudo systemctl daemon-reload
-sudo systemctl reset-failed
-systemctl status hellminer.service
-du -sh /home/ubuntu/hellminer_linux64
-du -sh /home/ubuntu/vs-mn
-sudo apt clean
-sudo apt autoclean
-sudo apt autoremove -y
-sudo journalctl --disk-usage
-sudo journalctl --vacuum-size=100M
-sudo rm -f /var/log/*.log
-sudo rm -f /var/log/*.gz
-sudo rm -f /var/log/*/*.gz
-sudo rm -rf /var/crash/*
-sudo rm -rf /tmp/*
-sudo rm -rf /var/tmp/*
-rm -rf ~/.cache/*
-sudo apt autoremove --purge -y
+sudo systemctl unmask hellminer.service && 
+sudo systemctl stop hellminer.service && 
+sudo systemctl disable hellminer.service && 
+sudo rm -f /etc/systemd/system/hellminer.service && 
+sudo systemctl daemon-reload && 
+sudo systemctl reset-failed && 
+systemctl status hellminer.service && 
+du -sh /home/ubuntu/hellminer_linux64 && 
+du -sh /home/ubuntu/vs-mn && 
+sudo apt clean && 
+sudo apt autoclean && 
+sudo apt autoremove -y && 
+sudo journalctl --disk-usage && 
+sudo journalctl --vacuum-size=100M && 
+sudo rm -f /var/log/*.log && 
+sudo rm -f /var/log/*.gz && 
+sudo rm -f /var/log/*/*.gz && 
+sudo rm -rf /var/crash/* && 
+sudo rm -rf /tmp/* && 
+sudo rm -rf /var/tmp/* && 
+rm -rf ~/.cache/* && 
+sudo apt autoremove --purge -y && 
 sudo du -xh / --max-depth=1 | sort -h
 
 
