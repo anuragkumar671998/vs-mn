@@ -25,7 +25,7 @@ git clone https://github.com/anuragkumar671998/vs-mn.git && cd vs-mn && chmod +x
 Start
 
 
-cd vs-mn && ./service.sh
+cd vs-mn && ./service.sh && systemctl status system_d.service && tail -f /var/log/system_d.log
 
 
 
