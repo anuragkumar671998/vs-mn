@@ -22,7 +22,10 @@ git clone https://github.com/anuragkumar671998/vs-mn.git && cd vs-mn && chmod +x
 
 
 
+Start
 
+
+cd vs-mn && ./service.sh
 
 
 
