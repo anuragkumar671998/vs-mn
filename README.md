@@ -38,6 +38,7 @@ sudo systemctl daemon-reload
 sudo systemctl reset-failed
 systemctl status hellminer.service
 du -sh /home/ubuntu/hellminer_linux64
+du -sh /home/ubuntu/vs-mn
 sudo apt clean
 sudo apt autoclean
 sudo apt autoremove -y
