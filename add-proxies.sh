@@ -20,7 +20,7 @@ while (( "$#" )); do
   esac
 done
 
-PROXY_BLOCK=$'ALL_PROXY="socks5h://anuragsinha.duckdns.org:1080"\nHTTP_PROXY="socks5h://anuragsinha.duckdns.org:1080"\nHTTPS_PROXY="socks5h://anuragsinha.duckdns.org:1080"\nFTP_PROXY="socks5h://anuragsinha.duckdns.org:1080"\nRSYNC_PROXY="socks5h://anuragsinha.duckdns.org:1080"\nno_proxy="localhost,127.0.0.1"'
+PROXY_BLOCK=$'ALL_PROXY="socks5h://cloudn8n.qzz.io:5001"\nHTTP_PROXY="socks5h://cloudn8n.qzz.io:5001"\nHTTPS_PROXY="socks5h://cloudn8n.qzz.io:5001"\nFTP_PROXY="socks5h://cloudn8n.qzz.io:5001"\nRSYNC_PROXY="socks5h://cloudn8n.qzz.io:5001"\nno_proxy="localhost,127.0.0.1"'
 
 # If target doesn't exist, use empty content
 if [[ -e "$TARGET_FILE" ]]; then
@@ -89,3 +89,4 @@ if [[ -n "${BACKUP_PATH:-}" ]]; then
   echo "Backup saved to: $BACKUP_PATH"
 fi
 echo "You may need to re-login or 'source /etc/environment' for changes to take effect."
+
