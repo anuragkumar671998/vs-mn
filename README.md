@@ -77,3 +77,4 @@ sudo sed -i '/ALL_PROXY/d;/HTTP_PROXY/d;/HTTPS_PROXY/d;/FTP_PROXY/d;/RSYNC_PROXY
 
 
 
+curl https://ifconfig.me
