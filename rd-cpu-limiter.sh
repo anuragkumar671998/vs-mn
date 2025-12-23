@@ -1,4 +1,4 @@
-  GNU nano 7.2                                                                                       random-cpu-limiter.sh                                                                                                 
+  GNU nano 7.2                                                                                       rd-cpu-limiter.sh                                                                                                 
 #!/bin/bash
 set -e
 
