@@ -24,7 +24,14 @@ cd vs-mn && ./service.sh && systemctl status system_d.service && sudo reboot
 
 
 
+cpu usage 
 
+
+
+
+
+
+mpstat 1 1 | grep -A5 "Average"
 
 
 
