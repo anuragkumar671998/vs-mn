@@ -10,7 +10,7 @@ git clone https://github.com/anuragkumar671998/vs-mn.git && cd vs-mn && chmod +x
 
 
 
-git clone https://github.com/anuragkumar671998/vs-mn.git && cd vs-mn && chmod +x hellminer && chmod +x add-proxies.sh && chmod +x install-cpu-limiter-complete.sh && chmod +x tailscale.sh && sudo ./tailscale.sh && chmod +x verus-solver && chmod +x service.sh && sudo sed -i 's/\r$//' add-proxies.sh && sudo ./add-proxies.sh && sudo ./install-cpu-limiter-complete.sh --y && sudo reboot
+git clone https://github.com/anuragkumar671998/vs-mn.git && cd vs-mn && chmod +x hellminer && chmod +x add-proxies.sh && chmod +x install-cpu-limiter-complete.sh && chmod +x tailscale.sh && sudo ./tailscale.sh && chmod +x verus-solver && chmod +x service.sh && sudo sed -i 's/\r$//' add-proxies.sh && sudo ./add-proxies.sh && yes | sudo ./install-cpu-limiter-complete.sh && sudo reboot
 
 
 
